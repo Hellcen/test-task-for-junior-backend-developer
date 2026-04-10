@@ -24,5 +24,8 @@ func NewRouter(taskHandler *httphandlers.TaskHandler, docsHandler *swaggerdocs.H
 	api.HandleFunc("/tasks/{id:[0-9]+}", taskHandler.Update).Methods(http.MethodPut)
 	api.HandleFunc("/tasks/{id:[0-9]+}", taskHandler.Delete).Methods(http.MethodDelete)
 
+	//Recurring handlers
+	api.HandleFunc("/recurringrule-rules", recurringHandler.Create).Methods(http.MethodPost)
+
 	return router
 }

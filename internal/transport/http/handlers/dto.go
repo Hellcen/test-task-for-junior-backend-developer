@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"example.com/taskservice/internal/domain/recurringrule"
 	"time"
 
 	taskdomain "example.com/taskservice/internal/domain/task"
@@ -30,4 +31,18 @@ func newTaskDTO(task *taskdomain.Task) taskDTO {
 		CreatedAt:   task.CreatedAt,
 		UpdatedAt:   task.UpdatedAt,
 	}
+}
+
+// CreateInput DTO для создания
+type CreateInput struct {
+	Title          string
+	Description    string
+	Status         recurringrule.Status
+	RecurrenceType recurringrule.RecurrenceType
+	IntervalDays   *int
+	DayOfMonth     *int
+	Parity         *recurringrule.Parity
+	SpecificDates  recurringrule.JSONDates
+	StartDate      time.Time
+	EndDate        *time.Time
 }

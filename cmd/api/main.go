@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -45,7 +46,23 @@ func main() {
 		Addr:              cfg.HTTPAddr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
+
+	go func() {
+		logger.Info("http server started", "addr", cfg.HTTPAddr)
+
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("listen and serve", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	<-ctx.Done()
+
+	logger.Info("shutting down gracefully...", "timeout", "10s")
 
 	go func() {
 		<-ctx.Done()
@@ -58,12 +75,22 @@ func main() {
 		}
 	}()
 
-	logger.Info("http server started", "addr", cfg.HTTPAddr)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Error("listen and serve", "error", err)
-		os.Exit(1)
+	// Graceful shutdown сервера
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Error("shutdown http server", "error", err)
+		if err := server.Close(); err != nil {
+			logger.Error("force close server", "error", err)
+		}
+	} else {
+		logger.Info("http server shut down gracefully")
 	}
+
+	// Дополнительное время для завершения других операций
+	time.Sleep(100 * time.Millisecond)
+	logger.Info("application stopped")
 }
 
 type config struct {
@@ -74,7 +101,7 @@ type config struct {
 func loadConfig() config {
 	cfg := config{
 		HTTPAddr:    envOrDefault("HTTP_ADDR", ":8080"),
-		DatabaseDSN: envOrDefault("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/taskservice?sslmode=disable"),
+		DatabaseDSN: envOrDefault("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"),
 	}
 
 	if cfg.DatabaseDSN == "" {
