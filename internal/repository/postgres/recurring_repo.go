@@ -45,3 +45,43 @@ func (r *RecurringRuleRepository) Create(ctx context.Context, rule *recurringrul
 
 	return rule, nil
 }
+
+func (r *RecurringRuleRepository) List(ctx context.Context) ([]recurringrule.RecurringRule, error) {
+	query := `
+		SELECT id, title, description, status, recurrence_type,
+		       interval_days, day_of_month, parity, specific_dates,
+		       start_date, end_date, created_at, updated_at
+		FROM recurring_rules ORDER BY created_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+
+	if err != nil {
+		return nil, fmt.Errorf("list recurring rules: %w", err)
+	}
+	defer rows.Close()
+
+	var rules []recurringrule.RecurringRule
+
+	for rows.Next() {
+		var rule recurringrule.RecurringRule
+		var specificDatesJSON []byte
+
+		err := rows.Scan(
+			&rule.Id, &rule.Title, &rule.Description, &rule.Status, &rule.RecurrenceType,
+			&rule.RecurrenceInterval, &rule.RecurrenceDayOfMonth, &rule.RecurrenceParity, &specificDatesJSON,
+			&rule.RecurrenceStartDate, &rule.RecurrenceEndDate, &rule.CreatedAt, &rule.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan recurring rule: %w", err)
+		}
+
+		if specificDatesJSON != nil {
+			json.Unmarshal(specificDatesJSON, &rule.RecurrenceSpecificDates)
+		}
+
+		rules = append(rules, rule)
+	}
+
+	return rules, nil
+}

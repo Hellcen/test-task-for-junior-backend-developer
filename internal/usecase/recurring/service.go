@@ -17,10 +17,12 @@ var (
 
 type Repository interface {
 	Create(ctx context.Context, rule *recurringrule.RecurringRule) (*recurringrule.RecurringRule, error)
+	List(ctx context.Context) ([]recurringrule.RecurringRule, error)
 }
 
 type Usecase interface {
 	Create(ctx context.Context, input CreateRecurringRuleInputDTO) (*recurringrule.RecurringRule, error)
+	List(ctx context.Context) ([]recurringrule.RecurringRule, error)
 }
 
 type Service struct {
@@ -64,6 +66,10 @@ func (s *Service) Create(ctx context.Context, input CreateRecurringRuleInputDTO)
 	}
 
 	return created, nil
+}
+
+func (s *Service) List(ctx context.Context) ([]recurringrule.RecurringRule, error) {
+	return s.repo.List(ctx)
 }
 
 // ValidateCreateInput валидация (остаётся здесь же)

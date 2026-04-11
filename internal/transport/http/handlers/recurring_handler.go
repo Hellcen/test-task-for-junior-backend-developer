@@ -30,3 +30,18 @@ func (h *RecurringHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusCreated, toRecurringRuleResponse(created))
 }
+
+func (h *RecurringHandler) List(w http.ResponseWriter, r *http.Request) {
+	rules, err := h.usecase.List(r.Context())
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+
+	response := make([]RecurringRuleResponse, 0, len(rules))
+	for i := range rules {
+		response = append(response, toRecurringRuleResponse(&rules[i]))
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
