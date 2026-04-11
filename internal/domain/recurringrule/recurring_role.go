@@ -80,7 +80,7 @@ type RecurringRule struct {
 	RecurrenceParity        *Parity        `json:"recurrence_parity,omitempty"`         // For evenodd
 	RecurrenceSpecificDates []time.Time    `json:"recurrence_specific_dates,omitempty"` // For specific
 
-	RecurrenceStartDate *time.Time `json:"recurrence_start_date,omitempty"` // Start date for tasks
+	RecurrenceStartDate time.Time  `json:"recurrence_start_date,omitempty"` // Start date for tasks
 	RecurrenceEndDate   *time.Time `json:"recurrence_end_date,omitempty"`   // End date for tasks
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`

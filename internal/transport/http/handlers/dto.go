@@ -13,7 +13,7 @@ type taskMutationDTO struct {
 	Status      taskdomain.Status `json:"status"`
 }
 
-type taskDTO struct {
+type TaskDTO struct {
 	ID          int64             `json:"id"`
 	Title       string            `json:"title"`
 	Description string            `json:"description"`
@@ -22,27 +22,18 @@ type taskDTO struct {
 	UpdatedAt   time.Time         `json:"updated_at"`
 }
 
-func newTaskDTO(task *taskdomain.Task) taskDTO {
-	return taskDTO{
-		ID:          task.ID,
-		Title:       task.Title,
-		Description: task.Description,
-		Status:      task.Status,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
-	}
-}
-
-// CreateInput DTO для создания
-type CreateInput struct {
-	Title          string
-	Description    string
-	Status         recurringrule.Status
-	RecurrenceType recurringrule.RecurrenceType
-	IntervalDays   *int
-	DayOfMonth     *int
-	Parity         *recurringrule.Parity
-	SpecificDates  recurringrule.JSONDates
-	StartDate      time.Time
-	EndDate        *time.Time
+// CreateInputDTO DTO для создания
+type CreateInputDTO struct {
+	Title                   string
+	Description             string
+	Status                  recurringrule.Status
+	RecurrenceType          recurringrule.RecurrenceType
+	RecurrenceInterval      *int
+	RecurrenceDayOfMonth    *int
+	RecurrenceParity        *recurringrule.Parity
+	RecurrenceSpecificDates recurringrule.JSONDates
+	RecurrenceStartDate     time.Time
+	RecurrenceEndDate       *time.Time
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }

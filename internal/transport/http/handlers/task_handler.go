@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"example.com/taskservice/internal/transport/http/mapper"
 	"net/http"
 	"strconv"
 
@@ -37,7 +38,7 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, newTaskDTO(created))
+	writeJSON(w, http.StatusCreated, mapper.NewTaskDTO(created))
 }
 
 func (h *TaskHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +54,7 @@ func (h *TaskHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, newTaskDTO(task))
+	writeJSON(w, http.StatusOK, mapper.NewTaskDTO(task))
 }
 
 func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +80,7 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, newTaskDTO(updated))
+	writeJSON(w, http.StatusOK, mapper.NewTaskDTO(updated))
 }
 
 func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -104,9 +105,9 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := make([]taskDTO, 0, len(tasks))
+	response := make([]TaskDTO, 0, len(tasks))
 	for i := range tasks {
-		response = append(response, newTaskDTO(&tasks[i]))
+		response = append(response, mapper.NewTaskDTO(&tasks[i]))
 	}
 
 	writeJSON(w, http.StatusOK, response)
