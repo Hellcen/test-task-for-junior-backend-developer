@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"example.com/taskservice/internal/usecase/recurring"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -39,8 +40,13 @@ func main() {
 	taskRepo := postgresrepo.New(pool)
 	taskUsecase := task.NewService(taskRepo)
 	taskHandler := httphandlers.NewTaskHandler(taskUsecase)
+
+	recurringRuleRepo := postgresrepo.NewRecurringRuleRepository(pool)
+	recurringRuleUsecase := recurring.NewService(recurringRuleRepo)
+	recurringRuleHandler := httphandlers.NewRecurringHandler(recurringRuleUsecase)
+
 	docsHandler := swaggerdocs.NewHandler()
-	router := transporthttp.NewRouter(taskHandler, docsHandler)
+	router := transporthttp.NewRouter(taskHandler, recurringRuleHandler, docsHandler)
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,

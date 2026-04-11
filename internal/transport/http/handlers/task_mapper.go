@@ -1,12 +1,11 @@
-package mapper
+package handlers
 
 import (
 	taskdomain "example.com/taskservice/internal/domain/task"
-	"example.com/taskservice/internal/transport/http/handlers"
 )
 
-func NewTaskDTO(task *taskdomain.Task) handlers.TaskDTO {
-	return handlers.TaskDTO{
+func NewTaskDTO(task *taskdomain.Task) TaskDTO {
+	return TaskDTO{
 		ID:          task.ID,
 		Title:       task.Title,
 		Description: task.Description,
