@@ -13,6 +13,8 @@ type Repository interface {
 	GetByID(ctx context.Context, id int64) (*recurringrule.RecurringRule, error)
 	List(ctx context.Context) ([]recurringrule.RecurringRule, error)
 	Delete(ctx context.Context, id int64) error
+	Update(ctx context.Context, rule *recurringrule.RecurringRule) (*recurringrule.RecurringRule, error)
+	UpdateStatus(ctx context.Context, id int64, status recurringrule.Status) error
 }
 
 type Usecase interface {
@@ -20,6 +22,8 @@ type Usecase interface {
 	GetByID(ctx context.Context, id int64) (*recurringrule.RecurringRule, error)
 	List(ctx context.Context) ([]recurringrule.RecurringRule, error)
 	Delete(ctx context.Context, id int64) error
+	Update(ctx context.Context, id int64, input UpdateInputDTO) (*recurringrule.RecurringRule, error)
+	UpdateStatus(ctx context.Context, id int64, status recurringrule.Status) error
 }
 
 type CreateInputDTO struct {

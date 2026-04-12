@@ -112,3 +112,31 @@ func (r *RecurringRuleRepository) Delete(ctx context.Context, id int64) error {
 
 	return nil
 }
+
+func (r *RecurringRuleRepository) Update(ctx context.Context, rule *recurringrule.RecurringRule) (*recurringrule.RecurringRule, error) {
+	query := `
+		UPDATE recurring_rules SET
+			title = $1, description = $2, status = $3, recurrence_type = $4,
+			recurrence_config = $5, start_date = $6, end_date = $7, updated_at = $8
+		WHERE id = $9
+	`
+
+	cmdTag, err := r.pool.Exec(ctx, query,
+		rule.Title, rule.Description, rule.Status, rule.RecurrenceType,
+		rule.RecurrenceConfig, rule.StartDate, rule.EndDate, rule.UpdatedAt, rule.ID,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("update recurring rule: %w", err)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return nil, recurringrule.ErrNotFound
+	}
+
+	return rule, nil
+}
+
+func (r *RecurringRuleRepository) UpdateStatus(ctx context.Context, id int64, status recurringrule.Status) error {
+	query := `UPDATE recurring_rules SET status = $1`
+}

@@ -66,5 +66,45 @@ func (s *Service) List(ctx context.Context) ([]recurringrule.RecurringRule, erro
 }
 
 func (s *Service) Delete(ctx context.Context, id int64) error {
+	if id <= 0 {
+		return fmt.Errorf("%w: id must be positive", ErrInvalidInput)
+	}
+
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *Service) Update(ctx context.Context, id int64, input UpdateInputDTO) (*recurringrule.RecurringRule, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("%w: id must be positive", ErrInvalidInput)
+	}
+
+	existing, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	validated, err := ValidateUpdateInput(input, *existing)
+	if err != nil {
+		return nil, err
+	}
+
+	existing.Title = validated.Title
+	existing.Description = validated.Description
+	existing.Status = validated.Status
+	existing.RecurrenceType = validated.RecurrenceType
+	existing.RecurrenceConfig = validated.Config
+	existing.StartDate = validated.StartDate
+	existing.EndDate = validated.EndDate
+	existing.UpdatedAt = s.now()
+
+	updated, err := s.repo.Update(ctx, existing)
+	if err != nil {
+		return nil, fmt.Errorf("update rule: %w", err)
+	}
+
+	return updated, nil
+}
+
+func (s *Service) UpdateStatus(ctx context.Context, id int64, status recurringrule.Status) error {
+
 }

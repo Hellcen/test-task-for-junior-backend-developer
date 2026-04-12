@@ -29,7 +29,8 @@ func NewRouter(taskHandler *httphandlers.TaskHandler, recurringRuleHandler *http
 	api.HandleFunc("/recurringrule-rules", recurringRuleHandler.List).Methods(http.MethodGet)
 	api.HandleFunc("/recurringrule-rules/{id:[0-9]+}", recurringRuleHandler.GetByID).Methods(http.MethodGet)
 	api.HandleFunc("/recurringrule-rules/{id:[0-9]+}", recurringRuleHandler.Delete).Methods(http.MethodDelete)
-	//api.HandleFunc("/recurringrule-rules/{id:[0-9]+}", recurringRuleHandler.Update).Methods(http.MethodPut)
+	api.HandleFunc("/recurringrule-rules/{id:[0-9]+}", recurringRuleHandler.Update).Methods(http.MethodPut)
+	api.HandleFunc("/", recurringRuleHandler.UpdateStatus).Methods(http.MethodPut)
 
 	return router
 }
