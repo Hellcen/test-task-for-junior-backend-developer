@@ -4,11 +4,10 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"example.com/taskservice/internal/domain/task"
 	"time"
 )
 
-var ErrNotFound = errors.New("recurringrule rule not found")
+var ErrNotFound = errors.New("recurring rule not found")
 
 type Status string
 
@@ -43,45 +42,114 @@ func (t RecurrenceType) Valid() bool {
 	return false
 }
 
-type Parity string
-
-const (
-	ParityEven Parity = "even"
-	ParityOdd  Parity = "odd"
-)
-
-func (p Parity) Valid() bool {
-	switch p {
-	case ParityEven, ParityOdd:
-		return true
-	}
-	return false
+type DailyConfig struct {
+	IntervalDays int `json:"interval_days"`
 }
 
-type JSONDates []time.Time
+type MonthlyConfig struct {
+	DayOfMonth int `json:"day_of_month"`
+}
 
-func (j JSONDates) Value() (driver.Value, error) {
+type EvenOddConfig struct {
+	Parity string `json:"parity"` // "even" или "odd"
+}
+
+type SpecificConfig struct {
+	Dates []time.Time `json:"dates"`
+}
+
+// JSONRawMessage для работы с JSONB
+type JSONRawMessage json.RawMessage
+
+func (j *JSONRawMessage) Scan(value interface{}) error {
+	if value == nil {
+		*j = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return nil
+	}
+	*j = append((*j)[0:0], bytes...)
+	return nil
+}
+
+func (j JSONRawMessage) Value() (driver.Value, error) {
 	if len(j) == 0 {
 		return nil, nil
 	}
-	return json.Marshal(j)
+	return []byte(j), nil
+}
+
+func (j JSONRawMessage) MarshalJSON() ([]byte, error) {
+	if len(j) == 0 {
+		return []byte("null"), nil
+	}
+	return j, nil
+}
+
+func (j *JSONRawMessage) UnmarshalJSON(data []byte) error {
+	if j == nil {
+		return nil
+	}
+	*j = append((*j)[0:0], data...)
+	return nil
 }
 
 type RecurringRule struct {
-	Id          uint64      `json:"id"`
-	Title       string      `json:"title"`
-	Description string      `json:"description"`
-	Status      task.Status `json:"status"`
+	ID               int64           `json:"id"`
+	Title            string          `json:"title"`
+	Description      string          `json:"description"`
+	Status           Status          `json:"status"`
+	RecurrenceType   RecurrenceType  `json:"recurrence_type"`
+	RecurrenceConfig json.RawMessage `json:"recurrence_config"`
+	StartDate        time.Time       `json:"start_date"`
+	EndDate          *time.Time      `json:"end_date,omitempty"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
+}
 
-	// Fields for periodicity
-	RecurrenceType          RecurrenceType `json:"recurrence_type,omitempty"`
-	RecurrenceInterval      *int           `json:"recurrence_interval,omitempty"`       // For daily: every N days
-	RecurrenceDayOfMonth    *int           `json:"recurrence_day_of_month,omitempty"`   // For monthly: day of the month
-	RecurrenceParity        *Parity        `json:"recurrence_parity,omitempty"`         // For evenodd
-	RecurrenceSpecificDates []time.Time    `json:"recurrence_specific_dates,omitempty"` // For specific
+// Helper методы для получения конфигурации
+func (r *RecurringRule) GetDailyConfig() (*DailyConfig, error) {
+	if r.RecurrenceType != TypeDaily {
+		return nil, errors.New("not a daily rule")
+	}
+	var config DailyConfig
+	if err := json.Unmarshal(r.RecurrenceConfig, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
 
-	RecurrenceStartDate time.Time  `json:"recurrence_start_date,omitempty"` // Start date for tasks
-	RecurrenceEndDate   *time.Time `json:"recurrence_end_date,omitempty"`   // End date for tasks
-	CreatedAt           time.Time  `json:"created_at"`
-	UpdatedAt           time.Time  `json:"updated_at"`
+func (r *RecurringRule) GetMonthlyConfig() (*MonthlyConfig, error) {
+	if r.RecurrenceType != TypeMonthly {
+		return nil, errors.New("not a monthly rule")
+	}
+	var config MonthlyConfig
+	if err := json.Unmarshal(r.RecurrenceConfig, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+func (r *RecurringRule) GetEvenOddConfig() (*EvenOddConfig, error) {
+	if r.RecurrenceType != TypeEvenOdd {
+		return nil, errors.New("not an evenodd rule")
+	}
+	var config EvenOddConfig
+	if err := json.Unmarshal(r.RecurrenceConfig, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+func (r *RecurringRule) GetSpecificConfig() (*SpecificConfig, error) {
+	if r.RecurrenceType != TypeSpecific {
+		return nil, errors.New("not a specific rule")
+	}
+	var config SpecificConfig
+	if err := json.Unmarshal(r.RecurrenceConfig, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
 }

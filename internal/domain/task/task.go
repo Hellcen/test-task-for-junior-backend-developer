@@ -1,6 +1,8 @@
 package task
 
-import "time"
+import (
+	"time"
+)
 
 type Status string
 
@@ -10,6 +12,14 @@ const (
 	StatusDone       Status = "done"
 )
 
+func (s Status) Valid() bool {
+	switch s {
+	case StatusNew, StatusInProgress, StatusDone:
+		return true
+	}
+	return false
+}
+
 type Task struct {
 	ID          int64     `json:"id"`
 	Title       string    `json:"title"`
@@ -17,13 +27,7 @@ type Task struct {
 	Status      Status    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-}
 
-func (s Status) Valid() bool {
-	switch s {
-	case StatusNew, StatusInProgress, StatusDone:
-		return true
-	default:
-		return false
-	}
+	RecurringRuleID *int64     `json:"recurring_rule_id,omitempty"`
+	GenerationDate  *time.Time `json:"generation_date,omitempty"`
 }

@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 
 	recurringusecase "example.com/taskservice/internal/usecase/recurring"
 )
@@ -31,6 +35,23 @@ func (h *RecurringHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, toRecurringRuleResponse(created))
 }
 
+func (h *RecurringHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, errors.New("invalid id"))
+		return
+	}
+
+	rule, err := h.usecase.GetByID(r.Context(), id)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toRecurringRuleResponse(rule))
+}
+
 func (h *RecurringHandler) List(w http.ResponseWriter, r *http.Request) {
 	rules, err := h.usecase.List(r.Context())
 	if err != nil {
@@ -44,4 +65,20 @@ func (h *RecurringHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, response)
+}
+
+func (h *RecurringHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, errors.New("invalid id"))
+		return
+	}
+
+	if err := h.usecase.Delete(r.Context(), id); err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
