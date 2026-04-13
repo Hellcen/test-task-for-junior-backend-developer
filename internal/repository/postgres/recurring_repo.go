@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -138,5 +139,16 @@ func (r *RecurringRuleRepository) Update(ctx context.Context, rule *recurringrul
 }
 
 func (r *RecurringRuleRepository) UpdateStatus(ctx context.Context, id int64, status recurringrule.Status) error {
-	query := `UPDATE recurring_rules SET status = $1`
+	query := `UPDATE recurring_rules SET status = $1, updated_at = $2 WHERE id = $3`
+
+	cmdTag, err := r.pool.Exec(ctx, query, status, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("update recurring rule: %w", err)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return recurringrule.ErrNotFound
+	}
+
+	return nil
 }

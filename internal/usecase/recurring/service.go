@@ -106,5 +106,13 @@ func (s *Service) Update(ctx context.Context, id int64, input UpdateInputDTO) (*
 }
 
 func (s *Service) UpdateStatus(ctx context.Context, id int64, status recurringrule.Status) error {
+	if id <= 0 {
+		return fmt.Errorf("%w: id must be positive", ErrInvalidInput)
+	}
 
+	if !status.Valid() {
+		return fmt.Errorf("%w: invalid status", ErrInvalidInput)
+	}
+
+	return s.repo.UpdateStatus(ctx, id, status)
 }

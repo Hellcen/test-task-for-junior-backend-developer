@@ -3,7 +3,7 @@
   "info": {
     "title": "Task Service API",
     "version": "1.0.0",
-    "description": "CRUD API for tasks built with clean architecture."
+    "description": "CRUD API for tasks and recurring rules built with clean architecture."
   },
   "servers": [
     {
@@ -14,6 +14,10 @@
     {
       "name": "Tasks",
       "description": "Operations with tasks"
+    },
+    {
+      "name": "Recurring Rules",
+      "description": "Operations with recurring rules for periodic tasks"
     }
   ],
   "paths": {
@@ -131,6 +135,158 @@
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
+    },
+    "/api/v1/recurringrule-rules": {
+      "get": {
+        "tags": ["Recurring Rules"],
+        "summary": "List all recurring rules",
+        "responses": {
+          "200": {
+            "description": "List of recurring rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RecurringRule" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Recurring Rules"],
+        "summary": "Create recurring rule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRecurringRuleRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created recurring rule",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecurringRule" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/v1/recurringrule-rules/{id}": {
+      "get": {
+        "tags": ["Recurring Rules"],
+        "summary": "Get recurring rule by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recurring rule",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecurringRule" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Recurring Rules"],
+        "summary": "Update recurring rule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateRecurringRuleRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated recurring rule",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecurringRule" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Recurring Rules"],
+        "summary": "Delete recurring rule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/recurringrule-rules/{id}/status": {
+      "patch": {
+        "tags": ["Recurring Rules"],
+        "summary": "Update recurring rule status",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["active", "paused", "archived"],
+                    "example": "paused"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Status updated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
     }
   },
   "components": {
@@ -217,10 +373,158 @@
           }
         }
       },
+      "CreateRecurringRuleRequest": {
+        "type": "object",
+        "required": ["title", "recurrence_type", "config", "start_date"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Daily health check"
+          },
+          "description": {
+            "type": "string",
+            "example": "Check system health every day"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "archived"],
+            "example": "active"
+          },
+          "recurrence_type": {
+            "type": "string",
+            "enum": ["daily", "monthly", "evenodd", "specific"],
+            "example": "daily"
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuration object depends on recurrence_type",
+            "oneOf": [
+              {
+                "title": "daily",
+                "properties": {
+                  "interval_days": { "type": "integer", "minimum": 1, "example": 2 }
+                }
+              },
+              {
+                "title": "monthly",
+                "properties": {
+                  "day_of_month": { "type": "integer", "minimum": 1, "maximum": 30, "example": 5 }
+                }
+              },
+              {
+                "title": "evenodd",
+                "properties": {
+                  "parity": { "type": "string", "enum": ["even", "odd"], "example": "even" }
+                }
+              },
+              {
+                "title": "specific",
+                "properties": {
+                  "dates": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "date-time" },
+                    "example": ["2026-04-15T00:00:00Z", "2026-05-01T00:00:00Z"]
+                  }
+                }
+              }
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-04-12T00:00:00Z"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-31T00:00:00Z"
+          }
+        }
+      },
+      "UpdateRecurringRuleRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Updated daily health check"
+          },
+          "description": {
+            "type": "string",
+            "example": "Updated description"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "archived"],
+            "example": "paused"
+          },
+          "recurrence_type": {
+            "type": "string",
+            "enum": ["daily", "monthly", "evenodd", "specific"],
+            "example": "daily"
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuration object depends on recurrence_type"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-05-01T00:00:00Z"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-31T00:00:00Z"
+          }
+        }
+      },
+      "RecurringRule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 1 },
+          "title": { "type": "string", "example": "Daily health check" },
+          "description": { "type": "string", "example": "Check system health every day" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "archived"],
+            "example": "active"
+          },
+          "recurrence_type": {
+            "type": "string",
+            "enum": ["daily", "monthly", "evenodd", "specific"],
+            "example": "daily"
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuration object depends on recurrence_type",
+            "example": { "interval_days": 2 }
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-04-12T00:00:00Z"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-31T00:00:00Z"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-04-12T10:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-04-12T10:30:00Z"
+          }
+        }
+      },
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "string", "example": "task not found" }
+          "error": { "type": "string", "example": "recurring rule not found" }
         }
       }
     }

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"example.com/taskservice/internal/domain/recurringrule"
 	"net/http"
 	"strconv"
 
@@ -104,4 +105,28 @@ func (h *RecurringHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, toRecurringRuleResponse(updated))
+}
+
+func (h *RecurringHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, errors.New("invalid id"))
+		return
+	}
+
+	var req struct {
+		Status recurringrule.Status `json:"status"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.usecase.UpdateStatus(r.Context(), id, req.Status); err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
