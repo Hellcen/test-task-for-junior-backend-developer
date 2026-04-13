@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"example.com/taskservice/internal/usecase/recurring"
+	"example.com/taskservice/metrics"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -45,7 +46,10 @@ func main() {
 	recurringRuleUsecase := recurring.NewService(recurringRuleRepo)
 	recurringRuleHandler := httphandlers.NewRecurringHandler(recurringRuleUsecase)
 
+	go metrics.CollectMetrics(recurringRuleUsecase)
+
 	docsHandler := swaggerdocs.NewHandler()
+
 	router := transporthttp.NewRouter(taskHandler, recurringRuleHandler, docsHandler)
 
 	server := &http.Server{
